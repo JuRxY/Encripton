@@ -1,18 +1,15 @@
-import sys, os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QListWidget, QListWidgetItem, QPushButton, QWidget, QLineEdit
-from PyQt5.QtCore import Qt, QUrl
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QListWidget, QListWidgetItem, QPushButton, QWidget, QLineEdit, QLabel
+from PyQt5.QtCore import Qt
+from endecryption import EncryptionEngine
 import threading
 import time
-from endecryption import EncryptionEngine
-
-#? https://www.youtube.com/watch?v=KVEIW2htw0A
 
 class ListBoxWidget(QListWidget):
-    def __init__(self, parent: QWidget | None = ...) -> None:
+    def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
-        self.setAcceptDrops(True)   # Enable drop events for this widget
+        self.setAcceptDrops(True)
         self.resize(600, 600)
-
         self.link = None
 
     def dragEnterEvent(self, event):
@@ -35,7 +32,6 @@ class ListBoxWidget(QListWidget):
             link = event.mimeData().urls()[0].toLocalFile()
             self.clear()
             self.addItem(QListWidgetItem(link))
-            #? print(link)
             self.link = link
         else:
             event.ignore()
@@ -43,66 +39,101 @@ class ListBoxWidget(QListWidget):
     def getLink(self):
         return self.link
 
-
 class EncriptonUI(QMainWindow):
-    def __init__(self, parent: QWidget | None = ..., flags: Qt.WindowFlags | Qt.WindowType = ...) -> None:
+    def __init__(self, parent: QWidget = None) -> None:
         super().__init__()
         self.resize(1200, 600)
-        self.windowTitle = "Encripton"
+        self.setWindowTitle("Encripton")
 
         self.lstView = ListBoxWidget(self)
-        
 
-        self.btn = QPushButton("Encrypt", self)
-        self.btn.setGeometry(950, 300, 100, 50)
-        self.btn.clicked.connect(self.encrypt)
+        self.selectedLabel = QLabel("Selected file: ", self)
+        self.selectedLabel.setAlignment(Qt.AlignCenter)
+        self.selectedLabel.setStyleSheet("font-size: 15px")
+        self.selectedLabel.setWordWrap(True)
+        self.selectedLabel.setGeometry(700, 200, 460, 100)
 
-        self.btn = QPushButton("Decrypt", self)
-        self.btn.setGeometry(1060, 300, 100, 50)
-        self.btn.clicked.connect(self.decrypt)
+        self.statusLabel = QLabel("", self)
+        self.statusLabel.setAlignment(Qt.AlignCenter)
+        self.statusLabel.setStyleSheet("font-size: 15px")
+        self.statusLabel.setWordWrap(True)
+        self.statusLabel.setGeometry(700, 520, 460, 100)
+
+        self.btnEncrypt = QPushButton("Encrypt", self)
+        self.btnEncrypt.setGeometry(950, 300, 100, 50)
+        self.btnEncrypt.clicked.connect(self.encrypt)
+
+        self.btnDecrypt = QPushButton("Decrypt", self)
+        self.btnDecrypt.setGeometry(1060, 300, 100, 50)
+        self.btnDecrypt.clicked.connect(self.decrypt)
 
         self.pswdLabel = QLineEdit(self, placeholderText="Password")
         self.pswdLabel.setGeometry(700, 300, 200, 50)
 
-
     def encrypt(self):
-        if self.lstView.getLink() is None or self.pswdLabel.text() == "":
+        file_path = self.lstView.getLink()
+        password = self.pswdLabel.text()
+
+        if not file_path or not password:
             return
-        else:
-            engine = EncryptionEngine(self.pswdLabel.text())
-            encrypted = engine.encrypt(self.lstView.getLink())
-            split_link = self.lstView.getLink().split(".")
-            no_extension = split_link[:-1][0]
-            encrypted = encrypted + " " + split_link[-1] # zapise extension na konec
-            with open(f"{no_extension}.eio", "w") as f:
-                f.write(encrypted)
+
+        engine = EncryptionEngine(password)
+
+        with open(file_path, "rb") as f:
+            file_data = f.read()
+
+        encrypted_data = engine.encrypt(file_data)
+
+        split_link = file_path.split(".")
+        file_extension = split_link[-1]
+        no_extension = ".".join(split_link[:-1])
+
+        with open(f"{no_extension}.eio", "wb") as f:
+            f.write(encrypted_data.encode('utf-8') + b"::" + file_extension.encode('utf-8'))
+        
+        self.statusLabel.setText("File encrypted successfully!")
+        threading.Thread(target=self.resetStatus).start()
 
     def decrypt(self):
-        if self.lstView.getLink() is None or self.pswdLabel.text() == "":
+        file_path = self.lstView.getLink()
+        password = self.pswdLabel.text()
+
+        if not file_path or not password:
             return
-        else:
-            split_link = self.lstView.getLink().split(".")
-            if split_link[-1] != "eio":
-                return
-            else:
-                engine = EncryptionEngine(self.pswdLabel.text())
-                with open(self.lstView.getLink(), "r") as f:
-                    encrypted = f.read()
-                    extension = encrypted.split(" ")[-1]
-                    encrypted = encrypted.split(" ")[0]
-                    decrypted = engine.decrypt(encrypted)
-                    no_extension = split_link[:-1][0]
-                    with open(no_extension + "." + extension, "w") as f:  # rekonstruira originalno ime datoteke
-                        f.write(decrypted)
-            
 
+        if not file_path.endswith(".eio"):
+            return
 
+        engine = EncryptionEngine(password)
+
+        with open(file_path, "rb") as f:
+            encrypted_data = f.read()
+
+        encrypted_content, file_extension = encrypted_data.rsplit(b"::", 1)
+        decrypted_data = engine.decrypt(encrypted_content)
+
+        no_extension = ".".join(file_path.split(".")[:-1])
+        output_file = f"{no_extension}.{file_extension.decode()}"
+        with open(output_file, "wb") as f:
+            f.write(decrypted_data)
+
+        self.statusLabel.setText("File decrypted successfully!")
+        threading.Thread(target=self.resetStatus).start()
+
+    def updateLabel(self):
+        while True:
+            self.selectedLabel.setText(f"Selected file: {self.lstView.getLink()}")
+            time.sleep(0.5) 
+
+    def resetStatus(self):
+        time.sleep(3)
+        self.statusLabel.setText("")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
     window = EncriptonUI()
     window.show()
-    
-    
+
+    thread = threading.Thread(target=window.updateLabel).start()
+
     sys.exit(app.exec_())
