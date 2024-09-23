@@ -39,11 +39,11 @@ class ListBoxWidget(QListWidget):
     def getLink(self):
         return self.link
 
-class EncriptonUI(QMainWindow):
+class EnkryptonUI(QMainWindow):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__()
         self.resize(1200, 600)
-        self.setWindowTitle("Encripton")
+        self.setWindowTitle("Enkrypton")
 
         self.lstView = ListBoxWidget(self)
 
@@ -69,6 +69,10 @@ class EncriptonUI(QMainWindow):
 
         self.pswdLabel = QLineEdit(self, placeholderText="Password")
         self.pswdLabel.setGeometry(700, 300, 200, 50)
+
+        # Threadi
+        self.stop_event = threading.Event() 
+        self.update_thread = threading.Thread(target=self.updateLabel)
 
     def encrypt(self):
         file_path = self.lstView.getLink()
@@ -121,19 +125,28 @@ class EncriptonUI(QMainWindow):
         threading.Thread(target=self.resetStatus).start()
 
     def updateLabel(self):
-        while True:
+        while not self.stop_event.is_set():
             self.selectedLabel.setText(f"Selected file: {self.lstView.getLink()}")
-            time.sleep(0.5) 
+            time.sleep(0.5)
 
     def resetStatus(self):
         time.sleep(3)
         self.statusLabel.setText("")
 
+    def closeEvent(self, event):
+        print("Closing window...")
+        self.stop_event.set()
+
+        if self.update_thread.is_alive():
+            self.update_thread.join()
+
+        event.accept()
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = EncriptonUI()
+    window = EnkryptonUI()
     window.show()
 
-    thread = threading.Thread(target=window.updateLabel).start()
+    window.update_thread.start()  # Starta bg thread
 
     sys.exit(app.exec_())

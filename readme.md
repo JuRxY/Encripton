@@ -1,11 +1,22 @@
-# Encripton
-Simple encryption gui. Work in progress.
+<p align="center">
+    <img align="center" src="./assets/icon.png" height="150px">
+</p>
 
-# Setup
+<h1 align="center">Enkrypton</h1>
+<h3 align="center">An open source encription and compression GUI.</h3>
+<br>
+
+## Requirements
+![][python-shield]
+
+## Installation
+
 ```bash
 pip install -r requirements.txt
 ```
-# Run
+
 ```bash
 python ui.py
 ```
+
+[python-shield]: https://img.shields.io/badge/Python-3.5^-green?style=for-the-badge&logo=python

@@ -20,12 +20,16 @@ class EncryptionEngine:
         return base64.b64encode(cipher.iv + encrypted).decode('utf-8')
     
     def decrypt(self, encrypted_data: str) -> bytes:
-        encrypted_data = base64.b64decode(encrypted_data)
-        iv = encrypted_data[:AES.block_size]
-        ciphertext = encrypted_data[AES.block_size:]
-        cipher = AES.new(self.KEY, AES.MODE_CBC, iv)
-        decrypted_padded = cipher.decrypt(ciphertext)
-        return unpad(decrypted_padded, AES.block_size)
+        try:
+            encrypted_data = base64.b64decode(encrypted_data)
+            iv = encrypted_data[:AES.block_size]
+            ciphertext = encrypted_data[AES.block_size:]
+            cipher = AES.new(self.KEY, AES.MODE_CBC, iv)
+            decrypted_padded = cipher.decrypt(ciphertext)
+            return unpad(decrypted_padded, AES.block_size)
+        except Exception as e:
+            print(e)
+            return b"incorrect password or corrupted data"
 
 if __name__ == "__main__":
     engine = EncryptionEngine("yxes")
