@@ -1,5 +1,5 @@
 <p align="center">
-    <img align="center" src="./assets/icon.png" height="150px">
+    <img align="center" src="./assets/icon.png" height="180px">
 </p>
 
 <h1 align="center">Enkrypton</h1>
