@@ -9,13 +9,25 @@
 ## Requirements
 ![][python-shield]
 
-## Installation
-
+## Install
+The pre-built version for windows is available:
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/JuRxY/Enkrypton.git
+cd Enkrypton/bin
+./Enkrypton-win.exe
 ```
 
+
+## Run with python (modify)
+
+Clone the directory
 ```bash
+git clone https://github.com/JuRxY/Enkrypton.git
+cd Enkrypton
+```
+Install dependencies and run
+```bash
+pip install -r requirements.txt
 python ui.py
 ```
 
