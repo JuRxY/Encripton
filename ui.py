@@ -1,16 +1,42 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QListWidget, QListWidgetItem, QPushButton, QWidget, QLineEdit, QLabel
+import sys, os
+from PyQt5.QtWidgets import QApplication, QMainWindow, QListWidget, QListWidgetItem, QPushButton, QWidget, QLineEdit, QLabel, QCheckBox, QSizePolicy
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter, QPixmap
 from endecryption import EncryptionEngine
 import threading
 import time
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 class ListBoxWidget(QListWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.resize(600, 600)
+
         self.link = None
+
+    def paintEvent(self, event):
+        painter = QPainter(self.viewport())
+        pixmap = QPixmap(resource_path("assets/dragndrop.png"))
+
+        custom_width = 600
+        custom_height = 600
+
+        scaled_pixmap = pixmap.scaled(custom_width, custom_height, aspectRatioMode=1)
+
+        x = (self.width() - custom_width) // 2
+        y = (self.height() - custom_height) // 2
+
+        painter.drawPixmap(x, y, scaled_pixmap.width(), scaled_pixmap.height(), scaled_pixmap)
+
+        super().paintEvent(event)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -53,19 +79,24 @@ class EnkryptonUI(QMainWindow):
         self.selectedLabel.setWordWrap(True)
         self.selectedLabel.setGeometry(700, 200, 460, 100)
 
+        self.runBtn = QPushButton("Run!", self)
+        self.runBtn.setGeometry(700, 500, 460, 50)
+        self.runBtn.setFixedSize(460, 50)
+        self.runBtn.clicked.connect(self.run)
+
         self.statusLabel = QLabel("", self)
         self.statusLabel.setAlignment(Qt.AlignCenter)
-        self.statusLabel.setStyleSheet("font-size: 15px")
+        self.statusLabel.setStyleSheet("font-size: 15px;")
         self.statusLabel.setWordWrap(True)
-        self.statusLabel.setGeometry(700, 520, 460, 100)
+        self.statusLabel.setGeometry(700, 550, 460, 50)
 
-        self.btnEncrypt = QPushButton("Encrypt", self)
+        self.btnEncrypt = QCheckBox("Encrypt", self)
         self.btnEncrypt.setGeometry(950, 300, 100, 50)
-        self.btnEncrypt.clicked.connect(self.encrypt)
+        self.btnEncrypt.stateChanged.connect(lambda: self.btnDecrypt.setChecked(not self.btnEncrypt.isChecked()))
 
-        self.btnDecrypt = QPushButton("Decrypt", self)
+        self.btnDecrypt = QCheckBox("Decrypt", self)
         self.btnDecrypt.setGeometry(1060, 300, 100, 50)
-        self.btnDecrypt.clicked.connect(self.decrypt)
+        self.btnDecrypt.stateChanged.connect(lambda: self.btnEncrypt.setChecked(not self.btnDecrypt.isChecked()))
 
         self.pswdLabel = QLineEdit(self, placeholderText="Password")
         self.pswdLabel.setGeometry(700, 300, 200, 50)
@@ -74,11 +105,25 @@ class EnkryptonUI(QMainWindow):
         self.stop_event = threading.Event() 
         self.update_thread = threading.Thread(target=self.updateLabel)
 
+    def run(self):
+        if (self.btnEncrypt.isChecked() and self.btnDecrypt.isChecked()) or (not self.btnEncrypt.isChecked() and not self.btnDecrypt.isChecked()):
+            self.statusLabel.setText("Please select either Encrypt or Decrypt!")
+            threading.Thread(target=self.resetStatus).start()
+            return
+        
+        elif self.btnEncrypt.isChecked():
+            self.encrypt()
+
+        elif self.btnDecrypt.isChecked():
+            self.decrypt()
+
     def encrypt(self):
         file_path = self.lstView.getLink()
         password = self.pswdLabel.text()
 
         if not file_path or not password:
+            self.statusLabel.setText("No file or password provided!")
+            threading.Thread(target=self.resetStatus).start()
             return
 
         engine = EncryptionEngine(password)
@@ -103,9 +148,13 @@ class EnkryptonUI(QMainWindow):
         password = self.pswdLabel.text()
 
         if not file_path or not password:
+            self.statusLabel.setText("No file or password provided!")
+            threading.Thread(target=self.resetStatus).start()
             return
 
         if not file_path.endswith(".eio"):
+            self.statusLabel.setText("File is not encrypted with Enrypton!")
+            threading.Thread(target=self.resetStatus).start()
             return
 
         engine = EncryptionEngine(password)

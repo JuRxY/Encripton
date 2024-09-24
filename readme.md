@@ -30,5 +30,9 @@ Install dependencies and run
 pip install -r requirements.txt
 python ui.py
 ```
+Build executable (optional)
+```bash
+pyinstaller --noconfirm --onefile --windowed --icon "./assets/icon.ico" --add-data "./assets/dragndrop.png;assets"  "./ui.py"
+```
 
 [python-shield]: https://img.shields.io/badge/Python-3.5^-green?style=for-the-badge&logo=python

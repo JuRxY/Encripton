@@ -3,13 +3,20 @@ from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Util.Padding import pad, unpad
 import base64
+import sys, os
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
 
+    return os.path.join(base_path, relative_path)
 
 class EncryptionEngine:
     def __init__(self, password: str) -> None:
         self.PASSWORD = password.encode('utf-8')
-        with open("salt.txt", "rb") as f:
+        with open(resource_path("salt.txt"), "rb") as f:
             self.SALT = f.read()
         self.KEY = PBKDF2(self.PASSWORD, self.SALT, dkLen=32)
     
