@@ -114,7 +114,7 @@ class EnkryptonUI(QMainWindow):
             self.decrypt()
 
     def encrypt(self):
-        file_path = self.selectedLabel.text()
+        file_path = self.selectedLabel.text().split(": ")[-1]
         password = self.pswdLabel.text()
 
         if not file_path or not password:
@@ -140,7 +140,7 @@ class EnkryptonUI(QMainWindow):
         threading.Thread(target=self.resetStatus).start()
 
     def decrypt(self):
-        file_path = self.selectedLabel.text()
+        file_path = self.selectedLabel.text().split(": ")[-1]
         password = self.pswdLabel.text()
 
         if not file_path or not password:
