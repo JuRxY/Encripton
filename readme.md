@@ -30,6 +30,7 @@ python ui.py
 ```
 Build executable (optional)
 ```bash
+pip install pyinstaller
 pyinstaller --noconfirm --onefile --windowed --name "Enkrypton" --icon "./assets/icon.ico" --add-data "./assets/dragndrop.png;assets"  "./ui.py"
 ```
 Your executable will be generated at `./dist/Enkrypton.exe`
