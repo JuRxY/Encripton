@@ -14,7 +14,10 @@
 ![][python-shield]
 
 ## Install
-The pre-built version for windows is available in the releases.
+The pre-built version for windows is available for download in the releases or you can download it with the following command in Windows Powershell:
+```bash
+Invoke-WebRequest -Uri "https://github.com/JuRxY/Enkrypton/releases/download/v1.0/Enkrypton.exe" -OutFile "Enkrypton.exe"
+```
 
 ## Run with python (modify)
 
