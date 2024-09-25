@@ -16,8 +16,7 @@ def resource_path(relative_path):
 class EncryptionEngine:
     def __init__(self, password: str) -> None:
         self.PASSWORD = password.encode('utf-8')
-        with open(resource_path("salt.txt"), "rb") as f:
-            self.SALT = f.read()
+        self.SALT = b"\x00\xf4{\xa5\xa4\xab\x95\xe1\xef\x81\xc5\xc8\xc8\xbd@\x7f\xc5\x18vl~'z\x17\xed\r\x17\x93p\x9b\xd2\x19\x1cI\xbe$R\xb1\x02\x1a\x19\xcf\xb2a\x91\x8d\xa9\xbb\t\x9e*\xb7\xbe$\xe7rt\x0f\xe9\xc3\xa7\xbb\x11#"
         self.KEY = PBKDF2(self.PASSWORD, self.SALT, dkLen=32)
     
     def encrypt(self, data: bytes) -> str:

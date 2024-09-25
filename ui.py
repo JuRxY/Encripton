@@ -15,12 +15,12 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 class ListBoxWidget(QListWidget):
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, selectedLabel: QLabel, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.resize(600, 600)
 
-        self.link = None
+        self.selectedLabel = selectedLabel
 
     def paintEvent(self, event):
         painter = QPainter(self.viewport())
@@ -56,14 +56,10 @@ class ListBoxWidget(QListWidget):
             event.setDropAction(Qt.CopyAction)
             event.accept()
             link = event.mimeData().urls()[0].toLocalFile()
-            self.clear()
-            self.addItem(QListWidgetItem(link))
-            self.link = link
+            self.selectedLabel.setText(f"Selected file: {link}")
         else:
             event.ignore()
 
-    def getLink(self):
-        return self.link
 
 class EnkryptonUI(QMainWindow):
     def __init__(self, parent: QWidget = None) -> None:
@@ -71,7 +67,6 @@ class EnkryptonUI(QMainWindow):
         self.resize(1200, 600)
         self.setWindowTitle("Enkrypton")
 
-        self.lstView = ListBoxWidget(self)
 
         self.selectedLabel = QLabel("Selected file: ", self)
         self.selectedLabel.setAlignment(Qt.AlignCenter)
@@ -79,6 +74,7 @@ class EnkryptonUI(QMainWindow):
         self.selectedLabel.setWordWrap(True)
         self.selectedLabel.setGeometry(700, 200, 460, 100)
 
+        self.lstView = ListBoxWidget(selectedLabel=self.selectedLabel, parent=self)
         self.runBtn = QPushButton("Run!", self)
         self.runBtn.setGeometry(700, 500, 460, 50)
         self.runBtn.setFixedSize(460, 50)
@@ -103,7 +99,6 @@ class EnkryptonUI(QMainWindow):
 
         # Threadi
         self.stop_event = threading.Event() 
-        self.update_thread = threading.Thread(target=self.updateLabel)
 
     def run(self):
         if (self.btnEncrypt.isChecked() and self.btnDecrypt.isChecked()) or (not self.btnEncrypt.isChecked() and not self.btnDecrypt.isChecked()):
@@ -118,7 +113,7 @@ class EnkryptonUI(QMainWindow):
             self.decrypt()
 
     def encrypt(self):
-        file_path = self.lstView.getLink()
+        file_path = self.selectedLabel.text()
         password = self.pswdLabel.text()
 
         if not file_path or not password:
@@ -128,7 +123,7 @@ class EnkryptonUI(QMainWindow):
 
         engine = EncryptionEngine(password)
 
-        with open(file_path, "rb") as f:
+        with open(resource_path(file_path), "rb") as f:
             file_data = f.read()
 
         encrypted_data = engine.encrypt(file_data)
@@ -137,14 +132,14 @@ class EnkryptonUI(QMainWindow):
         file_extension = split_link[-1]
         no_extension = ".".join(split_link[:-1])
 
-        with open(f"{no_extension}.eio", "wb") as f:
+        with open(resource_path(f"{no_extension}.eio"), "wb") as f:
             f.write(encrypted_data.encode('utf-8') + b"::" + file_extension.encode('utf-8'))
         
         self.statusLabel.setText("File encrypted successfully!")
         threading.Thread(target=self.resetStatus).start()
 
     def decrypt(self):
-        file_path = self.lstView.getLink()
+        file_path = self.selectedLabel.text()
         password = self.pswdLabel.text()
 
         if not file_path or not password:
@@ -159,7 +154,7 @@ class EnkryptonUI(QMainWindow):
 
         engine = EncryptionEngine(password)
 
-        with open(file_path, "rb") as f:
+        with open(resource_path(file_path), "rb") as f:
             encrypted_data = f.read()
 
         encrypted_content, file_extension = encrypted_data.rsplit(b"::", 1)
@@ -167,16 +162,11 @@ class EnkryptonUI(QMainWindow):
 
         no_extension = ".".join(file_path.split(".")[:-1])
         output_file = f"{no_extension}.{file_extension.decode()}"
-        with open(output_file, "wb") as f:
+        with open(resource_path(output_file), "wb") as f:
             f.write(decrypted_data)
 
         self.statusLabel.setText("File decrypted successfully!")
         threading.Thread(target=self.resetStatus).start()
-
-    def updateLabel(self):
-        while not self.stop_event.is_set():
-            self.selectedLabel.setText(f"Selected file: {self.lstView.getLink()}")
-            time.sleep(0.5)
 
     def resetStatus(self):
         time.sleep(3)
@@ -186,9 +176,6 @@ class EnkryptonUI(QMainWindow):
         print("Closing window...")
         self.stop_event.set()
 
-        if self.update_thread.is_alive():
-            self.update_thread.join()
-
         event.accept()
 
 if __name__ == "__main__":
@@ -196,6 +183,5 @@ if __name__ == "__main__":
     window = EnkryptonUI()
     window.show()
 
-    window.update_thread.start()  # Starta bg thread
 
     sys.exit(app.exec_())
