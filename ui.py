@@ -1,7 +1,7 @@
 import sys, os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QListWidget, QListWidgetItem, QPushButton, QWidget, QLineEdit, QLabel, QCheckBox, QSizePolicy
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QPixmap
+from PyQt5.QtGui import QPainter, QPixmap, QIcon
 from endecryption import EncryptionEngine
 import threading
 import time
@@ -66,6 +66,7 @@ class EnkryptonUI(QMainWindow):
         super().__init__()
         self.resize(1200, 600)
         self.setWindowTitle("Enkrypton")
+        self.setWindowIcon(QIcon(resource_path("assets/icon.ico")))
 
 
         self.selectedLabel = QLabel("Selected file: ", self)
